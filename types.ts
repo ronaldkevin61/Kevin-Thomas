@@ -1,3 +1,4 @@
+
 export enum TransactionType {
   INCOME = 'INCOME',
   EXPENSE = 'EXPENSE',
@@ -47,6 +48,16 @@ export interface Transaction {
   memberId?: string;
   paymentMethod: PaymentMethod;
   attachmentUrl?: string; // For uploaded receipts
+  budgetId?: string; // Link to a specific budget/fund
+}
+
+export interface Budget {
+  id: string;
+  name: string;
+  amount: number; // Total budget limit or Fund Goal
+  year?: number; // Optional year
+  categories: string[]; // Expense categories included in this budget
+  attachmentUrl?: string; // For uploaded budget documents
 }
 
 export interface AppSettings {

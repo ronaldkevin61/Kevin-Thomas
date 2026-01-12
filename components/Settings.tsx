@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { AppSettings } from '../types';
 import { Moon, Sun, Church, CreditCard, User, Mail, Upload, Image as ImageIcon } from 'lucide-react';
@@ -86,8 +87,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
                     <div className="p-6 space-y-6">
                          <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Church Logo</label>
-                            <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-neutral-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-neutral-800 relative group">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+                                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-neutral-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-neutral-800 relative group shrink-0">
                                     {settings.logoUrl ? (
                                         <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain" />
                                     ) : (
@@ -104,7 +105,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
                                     />
                                     <button 
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+                                        className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto sm:mx-0"
                                     >
                                         <Upload className="w-4 h-4" /> Upload New Logo
                                     </button>
@@ -129,7 +130,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings }) => {
                         <h3 className="font-semibold text-lg text-slate-800 dark:text-white">Regional Preferences</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">Set your currency and formatting.</p>
                     </div>
-                    <div className="p-6 grid grid-cols-2 gap-6">
+                    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Currency</label>
                             <select 

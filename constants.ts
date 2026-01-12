@@ -1,4 +1,5 @@
-import { Member, Transaction, TransactionType, IncomeCategory, ExpenseCategory, PaymentMethod } from './types';
+
+import { Member, Transaction, TransactionType, IncomeCategory, ExpenseCategory, PaymentMethod, Budget } from './types';
 
 export const INITIAL_MEMBERS: Member[] = [
   { id: '1', name: 'Ravi Kumar', mobile: '+91 98765 43210', email: 'ravi@example.com' },
@@ -85,6 +86,30 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     description: 'Staff Salary',
     paymentMethod: PaymentMethod.BANK_TRANSFER,
   },
+];
+
+export const INITIAL_BUDGETS: Budget[] = [
+  {
+    id: 'b1',
+    name: 'General Fund 2024',
+    amount: 250000,
+    year: 2024,
+    categories: [ExpenseCategory.SALARY, ExpenseCategory.UTILITIES, ExpenseCategory.ADMIN],
+  },
+  {
+    id: 'b2',
+    name: 'Missions & Outreach',
+    amount: 50000,
+    year: 2024,
+    categories: [ExpenseCategory.CHARITY],
+  },
+  {
+    id: 'b3',
+    name: 'Building Maintenance',
+    amount: 100000,
+    year: 2024,
+    categories: [ExpenseCategory.MAINTENANCE],
+  }
 ];
 
 export const formatCurrency = (amount: number) => {

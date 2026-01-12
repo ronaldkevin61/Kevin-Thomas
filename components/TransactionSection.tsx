@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Transaction, TransactionType, IncomeCategory, ExpenseCategory, PaymentMethod, Member } from '../types';
-import { Plus, Search, Filter, Upload, Sparkles, Loader2, FileText, Paperclip, X, Eye, Calendar, Tag, UserPlus, Coins, Users, Layers, Check, ChevronDown, ScanLine, Trash2, AlertTriangle } from 'lucide-react';
+import { Transaction, TransactionType, IncomeCategory, ExpenseCategory, PaymentMethod, Member, Budget } from '../types';
+import { Plus, Search, Filter, Upload, Sparkles, Loader2, FileText, Paperclip, X, Eye, Calendar, Tag, UserPlus, Coins, Users, Layers, Check, ChevronDown, ScanLine, Trash2, AlertTriangle, PieChart, Wallet, Edit } from 'lucide-react';
 import { scanReceipt } from '../services/geminiService';
 import { getCategoryColor } from '../constants';
 
@@ -8,7 +9,9 @@ interface TransactionSectionProps {
   type: TransactionType;
   transactions: Transaction[];
   members: Member[];
+  budgets?: Budget[]; // Added Budgets Prop
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+  onUpdateTransaction: (transaction: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
   onAddMember?: (member: Omit<Member, 'id'>) => void;
   currencySymbol: string;
@@ -26,14 +29,17 @@ const QUICK_AMOUNTS = [100, 500, 1000, 2000, 5000];
 const TransactionSection: React.FC<TransactionSectionProps> = ({ 
   type, 
   transactions, 
-  members, 
+  members,
+  budgets = [], 
   onAddTransaction,
+  onUpdateTransaction,
   onDeleteTransaction,
   onAddMember,
   currencySymbol
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   // Confirmation State
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -62,11 +68,14 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
 
   // Form States
   const [amount, setAmount] = useState('');
+  const [formattedAmount, setFormattedAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState<string>('');
   const [description, setDescription] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [memberId, setMemberId] = useState<string>('');
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string>(''); // For Budget Link
+  
   const [isScanning, setIsScanning] = useState(false);
   const [attachmentName, setAttachmentName] = useState('');
   const [attachmentBase64, setAttachmentBase64] = useState('');
@@ -134,13 +143,14 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
             const desc = t.description.toLowerCase();
             const amt = t.amount.toString();
             const dateStr = t.date;
+            const budgetName = budgets.find(b => b.id === t.budgetId)?.name.toLowerCase() || '';
             
-            return memberName.includes(term) || desc.includes(term) || amt.includes(term) || dateStr.includes(term);
+            return memberName.includes(term) || desc.includes(term) || amt.includes(term) || dateStr.includes(term) || budgetName.includes(term);
         });
     }
 
     return filtered.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, type, selectedYear, selectedMonth, selectedWeek, searchTerm, members, incomeTab]);
+  }, [transactions, type, selectedYear, selectedMonth, selectedWeek, searchTerm, members, incomeTab, budgets]);
 
   // Year Range Logic (Up to 2050)
   const years = useMemo(() => {
@@ -163,6 +173,7 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
   const weeks = [1, 2, 3, 4, 5];
 
   const handleOpenAddModal = (presetCategory?: string) => {
+      setEditingId(null);
       setCategory(presetCategory || '');
       // If adding loose offering, force clear member ID
       if (presetCategory === IncomeCategory.LOOSE_OFFERING) {
@@ -172,6 +183,33 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
           setMemberId('');
           setMemberSearchQuery('');
       }
+      setSelectedBudgetId('');
+      setAmount('');
+      setFormattedAmount('');
+      setDescription('');
+      setPaymentMethod(PaymentMethod.CASH);
+      setAttachmentName('');
+      setAttachmentBase64('');
+      setIsAdding(true);
+  };
+
+  const handleEditClick = (t: Transaction) => {
+      setDate(t.date);
+      setAmount(t.amount.toString());
+      setFormattedAmount(t.amount.toLocaleString('en-IN'));
+      setCategory(t.category);
+      setDescription(t.description);
+      setPaymentMethod(t.paymentMethod);
+      setMemberId(t.memberId || '');
+      
+      const member = members.find(m => m.id === t.memberId);
+      setMemberSearchQuery(member ? member.name : '');
+      
+      setSelectedBudgetId(t.budgetId || '');
+      setAttachmentBase64(t.attachmentUrl || '');
+      setAttachmentName(t.attachmentUrl ? 'Existing Attachment' : '');
+      
+      setEditingId(t.id);
       setIsAdding(true);
   };
 
@@ -210,7 +248,10 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
               const base64Data = tempFile.base64.split(',')[1];
               const result = await scanReceipt(base64Data);
               if (result) {
-                  if (result.amount) setAmount(result.amount.toString());
+                  if (result.amount) {
+                      setAmount(result.amount.toString());
+                      setFormattedAmount(result.amount.toLocaleString('en-IN'));
+                  }
                   if (result.date) setDate(result.date);
                   if (result.description) setDescription(result.description);
               } else {
@@ -225,35 +266,69 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
       setTempFile(null);
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/,/g, '');
+      if (raw === '' || /^\d+$/.test(raw)) {
+          setAmount(raw);
+          if (raw) {
+              setFormattedAmount(parseInt(raw).toLocaleString('en-IN'));
+          } else {
+              setFormattedAmount('');
+          }
+      }
+  };
+
   const handleQuickAmount = (val: number, e: React.MouseEvent) => {
       e.preventDefault(); // Prevent form submission
-      const currentVal = parseFloat(amount || '0');
-      setAmount((currentVal + val).toString());
+      const currentVal = parseInt(amount || '0');
+      const newVal = currentVal + val;
+      setAmount(newVal.toString());
+      setFormattedAmount(newVal.toLocaleString('en-IN'));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || parseFloat(amount) <= 0 || !category) return;
+    
+    // Determine effective category
+    let effectiveCategory = category;
+    
+    // If Income and Budget is selected, we might have hidden the category.
+    // If it's empty, default it to "Fund" or keep it if it was preset (like LOOSE_OFFERING).
+    if (type === TransactionType.INCOME && selectedBudgetId && !effectiveCategory) {
+        effectiveCategory = 'Fund'; 
+    }
 
-    onAddTransaction({
+    if (!amount || parseFloat(amount) <= 0 || !effectiveCategory) return;
+
+    const transactionData = {
       date,
       amount: parseFloat(amount),
       type,
-      category,
+      category: effectiveCategory,
       description,
       paymentMethod,
       memberId: type === TransactionType.INCOME && memberId ? memberId : undefined,
-      attachmentUrl: attachmentBase64 ? attachmentBase64 : undefined 
-    });
+      attachmentUrl: attachmentBase64 ? attachmentBase64 : undefined,
+      budgetId: selectedBudgetId || undefined
+    };
+
+    if (editingId) {
+        onUpdateTransaction({ ...transactionData, id: editingId });
+    } else {
+        onAddTransaction(transactionData);
+    }
 
     // Reset
     setAmount('');
+    setFormattedAmount('');
     setDescription('');
     setCategory('');
     setAttachmentName('');
     setAttachmentBase64('');
     setMemberId('');
     setMemberSearchQuery('');
+    setSelectedBudgetId('');
+    setEditingId(null);
     setIsAdding(false);
   };
   
@@ -291,6 +366,9 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
   // Determine if we should hide member field (Loose Offering)
   const isLooseOfferingCategory = category === IncomeCategory.LOOSE_OFFERING;
 
+  // Determine if we should hide category select (Income + Budget Selected)
+  const shouldHideCategory = type === TransactionType.INCOME && selectedBudgetId !== '';
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
@@ -304,18 +382,18 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
         </div>
         
         {/* Separate Buttons for Income */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
             {type === TransactionType.INCOME ? (
                 <>
                     <button 
                       onClick={() => handleOpenAddModal(IncomeCategory.LOOSE_OFFERING)}
-                      className="px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2 transition-colors bg-teal-600 hover:bg-teal-700 shadow-sm"
+                      className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-colors bg-teal-600 hover:bg-teal-700 shadow-sm whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" /> New Loose Offering
                     </button>
                     <button 
                       onClick={() => handleOpenAddModal()}
-                      className="px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2 transition-colors bg-green-600 hover:bg-green-700 shadow-sm"
+                      className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-colors bg-green-600 hover:bg-green-700 shadow-sm whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" /> New Tithe/Offering
                     </button>
@@ -333,24 +411,24 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
 
       {/* Tabs for Income */}
       {type === TransactionType.INCOME && (
-          <div className="flex p-1 bg-slate-100 dark:bg-neutral-800 rounded-lg w-fit">
+          <div className="flex p-1 bg-slate-100 dark:bg-neutral-800 rounded-lg w-full sm:w-fit overflow-x-auto">
               <button 
                 onClick={() => setIncomeTab('ALL')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${incomeTab === 'ALL' ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${incomeTab === 'ALL' ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
               >
-                  <div className="flex items-center gap-2"><Layers className="w-4 h-4" /> All</div>
+                  <div className="flex items-center gap-2 justify-center"><Layers className="w-4 h-4" /> All</div>
               </button>
               <button 
                 onClick={() => setIncomeTab('TITHE_OFFERING')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${incomeTab === 'TITHE_OFFERING' ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${incomeTab === 'TITHE_OFFERING' ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
               >
-                   <div className="flex items-center gap-2"><Users className="w-4 h-4" /> Tithes & Member</div>
+                   <div className="flex items-center gap-2 justify-center"><Users className="w-4 h-4" /> Tithes & Member</div>
               </button>
               <button 
                 onClick={() => setIncomeTab('LOOSE_OFFERING')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${incomeTab === 'LOOSE_OFFERING' ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${incomeTab === 'LOOSE_OFFERING' ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
               >
-                   <div className="flex items-center gap-2"><Coins className="w-4 h-4" /> Loose Offering</div>
+                   <div className="flex items-center gap-2 justify-center"><Coins className="w-4 h-4" /> Loose Offering</div>
               </button>
           </div>
       )}
@@ -388,7 +466,7 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
         </div>
       )}
 
-      {/* New Entry Modal */}
+      {/* New/Edit Entry Modal */}
       {isAdding && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsAdding(false)} />
@@ -396,11 +474,14 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                   <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900">
                       <div>
                         <h3 className="font-bold text-xl text-slate-800 dark:text-white">
-                            {type === TransactionType.INCOME 
-                                ? (category === IncomeCategory.LOOSE_OFFERING ? 'New Loose Offering' : 'New Tithe / Offering') 
-                                : 'New Expense'}
+                            {editingId 
+                                ? 'Edit Transaction'
+                                : (type === TransactionType.INCOME 
+                                    ? (category === IncomeCategory.LOOSE_OFFERING ? 'New Loose Offering' : 'New Tithe / Offering') 
+                                    : 'New Expense')
+                            }
                         </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enter details below</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{editingId ? 'Update transaction details' : 'Enter details below'}</p>
                       </div>
                       <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-neutral-800 rounded-full text-slate-500 transition-colors">
                           <X className="w-5 h-5" />
@@ -416,26 +497,30 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
                                 <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
-                                <select 
-                                    required 
-                                    value={category} 
-                                    onChange={e => setCategory(e.target.value)} 
-                                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-900 dark:text-white rounded-lg outline-none transition-all"
-                                >
-                                    <option value="">Select Category</option>
-                                    {type === TransactionType.INCOME 
-                                        ? Object.values(IncomeCategory).map(c => <option key={c} value={c}>{c}</option>)
-                                        : Object.values(ExpenseCategory).map(c => <option key={c} value={c}>{c}</option>)
-                                    }
-                                </select>
-                            </div>
+                            
+                            {/* Hide Category if (Income Type + Budget Selected) OR (It is specifically Loose Offering preset) */}
+                            {!shouldHideCategory && !isLooseOfferingCategory && (
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
+                                    <select 
+                                        required 
+                                        value={category} 
+                                        onChange={e => setCategory(e.target.value)} 
+                                        className="w-full px-3 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-900 dark:text-white rounded-lg outline-none transition-all"
+                                    >
+                                        <option value="">Select Category</option>
+                                        {type === TransactionType.INCOME 
+                                            ? Object.values(IncomeCategory).map(c => <option key={c} value={c}>{c}</option>)
+                                            : Object.values(ExpenseCategory).map(c => <option key={c} value={c}>{c}</option>)
+                                        }
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
                         <div>
@@ -443,13 +528,12 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                             <div className="relative mb-3">
                                 <span className="absolute left-3 top-2.5 text-slate-500">{currencySymbol}</span>
                                 <input 
-                                    type="number" 
+                                    type="text" 
                                     required 
-                                    min="1"
-                                    value={amount} 
-                                    onChange={e => setAmount(e.target.value)} 
+                                    value={formattedAmount} 
+                                    onChange={handleAmountChange} 
                                     className={`w-full pl-8 pr-3 py-2.5 bg-slate-50 dark:bg-neutral-800 border ${amount === '' ? 'border-slate-300 dark:border-neutral-600' : 'border-slate-200 dark:border-neutral-700'} text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-lg`} 
-                                    placeholder="0.00" 
+                                    placeholder="0" 
                                 />
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -465,6 +549,25 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                                 ))}
                             </div>
                         </div>
+
+                        {/* Link to Budget (Optional) */}
+                        {budgets.length > 0 && (
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider flex items-center gap-1">
+                                    <PieChart className="w-3 h-3" /> Link to Budget / Fund (Optional)
+                                </label>
+                                <select 
+                                    value={selectedBudgetId} 
+                                    onChange={e => setSelectedBudgetId(e.target.value)} 
+                                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-900 dark:text-white rounded-lg outline-none transition-all"
+                                >
+                                    <option value="">None (General)</option>
+                                    {budgets.map(b => (
+                                        <option key={b.id} value={b.id}>{b.name} ({b.year || 'All Time'})</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {type === TransactionType.INCOME && !isLooseOfferingCategory && (
                             <div className="bg-slate-50 dark:bg-neutral-800/50 p-4 rounded-xl border border-slate-100 dark:border-neutral-800 relative">
@@ -538,9 +641,9 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
 
                         <div>
                              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Payment Method</label>
-                             <div className="grid grid-cols-2 gap-3">
+                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {Object.values(PaymentMethod).map(m => (
-                                    <div key={m} onClick={() => setPaymentMethod(m)} className={`cursor-pointer px-3 py-2 rounded-lg border text-sm font-medium text-center transition-all ${paymentMethod === m ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'}`}>
+                                    <div key={m} onClick={() => setPaymentMethod(m)} className={`cursor-pointer px-2 py-2 rounded-lg border text-sm font-medium text-center transition-all ${paymentMethod === m ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'}`}>
                                         {m}
                                     </div>
                                 ))}
@@ -574,7 +677,7 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
 
                         <div className="pt-2">
                             <button type="submit" className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-[0.98] ${type === TransactionType.INCOME ? 'bg-green-600 hover:bg-green-700 shadow-green-200 dark:shadow-none' : 'bg-red-600 hover:bg-red-700 shadow-red-200 dark:shadow-none'}`}>
-                                Save Transaction
+                                {editingId ? 'Update Transaction' : 'Save Transaction'}
                             </button>
                         </div>
                     </form>
@@ -739,6 +842,7 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                         <th className="px-6 py-3 whitespace-nowrap">Date</th>
                         {type === TransactionType.INCOME && <th className="px-6 py-3 whitespace-nowrap">Member</th>}
                         <th className="px-6 py-3 whitespace-nowrap">Category</th>
+                        <th className="px-6 py-3 whitespace-nowrap">Fund</th>
                         <th className="px-6 py-3 min-w-[150px]">Description</th>
                         <th className="px-6 py-3 text-right whitespace-nowrap">Amount</th>
                         <th className="px-6 py-3 text-center whitespace-nowrap">Receipt</th>
@@ -748,6 +852,7 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                 <tbody className="divide-y divide-slate-100 dark:divide-neutral-800">
                     {filteredList.map(t => {
                         const memberName = members.find(m => m.id === t.memberId)?.name || '-';
+                        const budgetName = budgets.find(b => b.id === t.budgetId)?.name || '-';
                         return (
                             <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-neutral-800/50">
                                 <td className="px-6 py-4 text-slate-700 dark:text-slate-300 whitespace-nowrap">{new Date(t.date).toLocaleDateString()}</td>
@@ -760,6 +865,7 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                                         {t.category}
                                     </button>
                                 </td>
+                                <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">{budgetName}</td>
                                 <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{t.description}</td>
                                 <td className={`px-6 py-4 text-right font-semibold whitespace-nowrap ${type === TransactionType.INCOME ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                     {currencySymbol}{t.amount.toLocaleString('en-IN')}
@@ -774,20 +880,29 @@ const TransactionSection: React.FC<TransactionSectionProps> = ({
                                     )}
                                 </td>
                                 <td className="px-6 py-4 text-center">
-                                    <button 
-                                        onClick={() => setDeleteId(t.id)}
-                                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-600 rounded transition-colors"
-                                        title="Delete Transaction"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    <div className="flex items-center justify-center gap-1">
+                                        <button 
+                                            onClick={() => handleEditClick(t)}
+                                            className="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                            title="Edit Transaction"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setDeleteId(t.id)}
+                                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-600 rounded transition-colors"
+                                            title="Delete Transaction"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         );
                     })}
                     {filteredList.length === 0 && (
                         <tr>
-                            <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No records found matching your filters.</td>
+                            <td colSpan={type === TransactionType.INCOME ? 8 : 7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No records found matching your filters.</td>
                         </tr>
                     )}
                 </tbody>

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Transaction, TransactionType } from '../types';
 import { Printer, Calendar, FileText, BarChart3, Receipt, Building2 } from 'lucide-react';
@@ -84,12 +85,12 @@ const Reports: React.FC<ReportsProps> = ({ transactions, churchName, currencySym
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Financial Statements</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Official church financial records and summaries.</p>
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center w-full md:w-auto">
                 {reportType !== 'YEARLY_SUMMARY' && (
                     <select 
                         value={year} 
                         onChange={e => setYear(Number(e.target.value))}
-                        className="bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-white rounded-lg px-3 py-2 outline-none shadow-sm font-medium"
+                        className="bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-white rounded-lg px-3 py-2 outline-none shadow-sm font-medium flex-1 md:flex-none"
                     >
                         {years.map(y => (
                             <option key={y} value={y}>{y}</option>
@@ -97,38 +98,38 @@ const Reports: React.FC<ReportsProps> = ({ transactions, churchName, currencySym
                     </select>
                 )}
                 
-                <div className="flex bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 p-1 rounded-lg shadow-sm">
+                <div className="flex bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 p-1 rounded-lg shadow-sm overflow-x-auto max-w-full">
                     <button 
                         onClick={() => setReportType('DETAILED')}
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${reportType === 'DETAILED' ? 'bg-slate-100 dark:bg-neutral-700 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${reportType === 'DETAILED' ? 'bg-slate-100 dark:bg-neutral-700 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Detailed
                     </button>
                     <button 
                         onClick={() => setReportType('MONTHLY_SUMMARY')}
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${reportType === 'MONTHLY_SUMMARY' ? 'bg-slate-100 dark:bg-neutral-700 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${reportType === 'MONTHLY_SUMMARY' ? 'bg-slate-100 dark:bg-neutral-700 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Monthly
                     </button>
                     <button 
                         onClick={() => setReportType('YEARLY_SUMMARY')}
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${reportType === 'YEARLY_SUMMARY' ? 'bg-slate-100 dark:bg-neutral-700 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${reportType === 'YEARLY_SUMMARY' ? 'bg-slate-100 dark:bg-neutral-700 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Yearly
                     </button>
                 </div>
 
-                <button onClick={handlePrint} className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg hover:opacity-90 shadow-lg shadow-slate-200 dark:shadow-none font-medium text-sm transition-opacity">
+                <button onClick={handlePrint} className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg hover:opacity-90 shadow-lg shadow-slate-200 dark:shadow-none font-medium text-sm transition-opacity ml-auto md:ml-0">
                     <Printer className="w-4 h-4" /> Print
                 </button>
             </div>
         </div>
 
         {/* Report Container - Designed to look like a document */}
-        <div className="bg-white p-10 rounded-xl shadow-lg border border-slate-100 max-w-5xl mx-auto print:shadow-none print:border-none print:p-0 print:w-full dark:bg-neutral-900 dark:border-neutral-800 print:dark:bg-white print:dark:text-black">
+        <div className="bg-white p-6 md:p-10 rounded-xl shadow-lg border border-slate-100 max-w-5xl mx-auto print:shadow-none print:border-none print:p-0 print:w-full dark:bg-neutral-900 dark:border-neutral-800 print:dark:bg-white print:dark:text-black overflow-hidden">
             
             {/* Document Header */}
-            <div className="flex justify-between items-start border-b-2 border-slate-900 dark:border-white pb-6 mb-8 print:border-black">
+            <div className="flex flex-col md:flex-row justify-between items-start border-b-2 border-slate-900 dark:border-white pb-6 mb-8 print:border-black gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Building2 className="w-8 h-8 text-slate-900 dark:text-white print:text-black" />
@@ -136,7 +137,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions, churchName, currencySym
                     </div>
                     <p className="text-sm text-slate-500 dark:text-slate-400 print:text-gray-600 font-medium">Financial Statement & Report</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left md:text-right w-full md:w-auto">
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white print:text-black">
                         {reportType === 'DETAILED' && `Detailed Report`}
                         {reportType === 'MONTHLY_SUMMARY' && `Monthly Summary`}
@@ -152,7 +153,7 @@ const Reports: React.FC<ReportsProps> = ({ transactions, churchName, currencySym
             {/* Detailed View - Modern Grid Layout */}
             {reportType === 'DETAILED' && (
                 <>
-                    <div className="grid grid-cols-3 gap-6 mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                         <div className="p-6 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-100 dark:border-neutral-700 print:bg-white print:border-slate-300">
                             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Total Income</p>
                             <p className="text-2xl font-bold text-green-600 dark:text-green-400 print:text-black">{currencySymbol}{totalIncome.toLocaleString('en-IN')}</p>
@@ -175,44 +176,46 @@ const Reports: React.FC<ReportsProps> = ({ transactions, churchName, currencySym
                             <h3 className="font-bold text-lg text-slate-800 dark:text-white print:text-black">Transaction History</h3>
                         </div>
                         
-                        <table className="w-full text-sm border-collapse">
-                            <thead>
-                                <tr className="text-left bg-slate-50 dark:bg-neutral-800 print:bg-slate-100 border-y border-slate-200 dark:border-neutral-700 print:border-slate-300">
-                                    <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 print:text-black">Date</th>
-                                    <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 print:text-black">Category</th>
-                                    <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 print:text-black">Description</th>
-                                    <th className="py-3 px-4 text-right font-semibold text-slate-700 dark:text-slate-200 print:text-black">Income</th>
-                                    <th className="py-3 px-4 text-right font-semibold text-slate-700 dark:text-slate-200 print:text-black">Expense</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-neutral-800 print:divide-slate-200">
-                                {data.map(t => (
-                                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-neutral-800/50 print:hover:bg-transparent">
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 print:text-black">{new Date(t.date).toLocaleDateString()}</td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 print:text-black">
-                                            <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 print:bg-transparent print:p-0 print:text-black border border-slate-200 dark:border-neutral-700 print:border-none">
-                                                {t.category}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 print:text-black">{t.description}</td>
-                                        <td className="py-3 px-4 text-right font-medium text-green-600 dark:text-green-400 print:text-black">
-                                            {t.type === TransactionType.INCOME ? `${currencySymbol}${t.amount.toLocaleString('en-IN')}` : '-'}
-                                        </td>
-                                        <td className="py-3 px-4 text-right font-medium text-red-600 dark:text-red-400 print:text-black">
-                                            {t.type === TransactionType.EXPENSE ? `${currencySymbol}${t.amount.toLocaleString('en-IN')}` : '-'}
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm border-collapse min-w-[600px]">
+                                <thead>
+                                    <tr className="text-left bg-slate-50 dark:bg-neutral-800 print:bg-slate-100 border-y border-slate-200 dark:border-neutral-700 print:border-slate-300">
+                                        <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 print:text-black">Date</th>
+                                        <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 print:text-black">Category</th>
+                                        <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 print:text-black">Description</th>
+                                        <th className="py-3 px-4 text-right font-semibold text-slate-700 dark:text-slate-200 print:text-black">Income</th>
+                                        <th className="py-3 px-4 text-right font-semibold text-slate-700 dark:text-slate-200 print:text-black">Expense</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-neutral-800 print:divide-slate-200">
+                                    {data.map(t => (
+                                        <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-neutral-800/50 print:hover:bg-transparent">
+                                            <td className="py-3 px-4 text-slate-600 dark:text-slate-300 print:text-black">{new Date(t.date).toLocaleDateString()}</td>
+                                            <td className="py-3 px-4 text-slate-600 dark:text-slate-300 print:text-black">
+                                                <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 print:bg-transparent print:p-0 print:text-black border border-slate-200 dark:border-neutral-700 print:border-none">
+                                                    {t.category}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-4 text-slate-600 dark:text-slate-300 print:text-black">{t.description}</td>
+                                            <td className="py-3 px-4 text-right font-medium text-green-600 dark:text-green-400 print:text-black">
+                                                {t.type === TransactionType.INCOME ? `${currencySymbol}${t.amount.toLocaleString('en-IN')}` : '-'}
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-medium text-red-600 dark:text-red-400 print:text-black">
+                                                {t.type === TransactionType.EXPENSE ? `${currencySymbol}${t.amount.toLocaleString('en-IN')}` : '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </>
             )}
 
             {/* Summary Tables - Clean & Professional */}
             {reportType === 'MONTHLY_SUMMARY' && (
-                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-700 print:border-black">
-                    <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-neutral-700 print:border-black">
+                    <table className="w-full text-sm min-w-[500px]">
                         <thead className="bg-slate-50 dark:bg-neutral-800 print:bg-slate-100 border-b border-slate-200 dark:border-neutral-700 print:border-black">
                             <tr>
                                 <th className="px-6 py-4 text-left font-bold text-slate-800 dark:text-white print:text-black uppercase text-xs tracking-wider">Month</th>
@@ -244,8 +247,8 @@ const Reports: React.FC<ReportsProps> = ({ transactions, churchName, currencySym
             )}
 
             {reportType === 'YEARLY_SUMMARY' && (
-                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-700 print:border-black">
-                     <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-neutral-700 print:border-black">
+                     <table className="w-full text-sm min-w-[500px]">
                         <thead className="bg-slate-50 dark:bg-neutral-800 print:bg-slate-100 border-b border-slate-200 dark:border-neutral-700 print:border-black">
                             <tr>
                                 <th className="px-6 py-4 text-left font-bold text-slate-800 dark:text-white print:text-black uppercase text-xs tracking-wider">Year</th>

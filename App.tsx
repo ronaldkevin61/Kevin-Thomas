@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
@@ -10,7 +11,8 @@ import {
   TrendingDown,
   FileBarChart,
   LogOut,
-  FolderOpen
+  FolderOpen,
+  PieChart
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import TransactionSection from './components/TransactionSection';
@@ -19,9 +21,10 @@ import AiFinancialAdvisor from './components/AiFinancialAdvisor';
 import Settings from './components/Settings';
 import Reports from './components/Reports';
 import FileManager from './components/FileManager';
+import Budgets from './components/Budgets';
 import Login from './components/Login';
-import { INITIAL_MEMBERS, INITIAL_TRANSACTIONS } from './constants';
-import { Member, Transaction, TransactionType, AppSettings, User } from './types';
+import { INITIAL_MEMBERS, INITIAL_TRANSACTIONS, INITIAL_BUDGETS } from './constants';
+import { Member, Transaction, TransactionType, AppSettings, User, Budget } from './types';
 
 enum View {
   DASHBOARD = 'DASHBOARD',
@@ -31,6 +34,7 @@ enum View {
   REPORTS = 'REPORTS',
   AI_ADVISOR = 'AI_ADVISOR',
   FILE_MANAGER = 'FILE_MANAGER',
+  BUDGETS = 'BUDGETS',
   SETTINGS = 'SETTINGS',
 }
 
@@ -44,6 +48,8 @@ const App = () => {
   // App State
   const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [budgets, setBudgets] = useState<Budget[]>(INITIAL_BUDGETS);
+  
   const [settings, setSettings] = useState<AppSettings>({
     churchName: 'Ecclesia Church',
     currency: 'INR',
@@ -65,6 +71,10 @@ const App = () => {
     setTransactions(prev => [transaction, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
 
+  const handleUpdateTransaction = (updatedTx: Transaction) => {
+    setTransactions(prev => prev.map(t => t.id === updatedTx.id ? updatedTx : t).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  };
+
   const handleDeleteTransaction = (id: string) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
@@ -83,6 +93,22 @@ const App = () => {
 
   const handleDeleteMember = (id: string) => {
     setMembers(prev => prev.filter(m => m.id !== id));
+  };
+
+  const handleAddBudget = (newBudget: Omit<Budget, 'id'>) => {
+    const budget: Budget = {
+      ...newBudget,
+      id: Math.random().toString(36).substr(2, 9),
+    };
+    setBudgets(prev => [...prev, budget]);
+  };
+
+  const handleUpdateBudget = (updatedBudget: Budget) => {
+    setBudgets(prev => prev.map(b => b.id === updatedBudget.id ? updatedBudget : b));
+  };
+
+  const handleDeleteBudget = (id: string) => {
+    setBudgets(prev => prev.filter(b => b.id !== id));
   };
 
   if (!user?.isAuthenticated) {
@@ -136,6 +162,7 @@ const App = () => {
           <NavItem view={View.EXPENSE} icon={TrendingDown} label="Expense & Payment" />
           
           <div className="pt-4 pb-1 px-4 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Management</div>
+          <NavItem view={View.BUDGETS} icon={PieChart} label="Budgets" />
           <NavItem view={View.MEMBERS} icon={Users} label="Members" />
           <NavItem view={View.FILE_MANAGER} icon={FolderOpen} label="File Manager" />
           <NavItem view={View.REPORTS} icon={FileBarChart} label="Reports" />
@@ -198,7 +225,9 @@ const App = () => {
                 type={TransactionType.INCOME} 
                 transactions={transactions} 
                 members={members} 
+                budgets={budgets}
                 onAddTransaction={handleAddTransaction}
+                onUpdateTransaction={handleUpdateTransaction}
                 onDeleteTransaction={handleDeleteTransaction}
                 onAddMember={handleAddMember}
                 currencySymbol={settings.currencySymbol}
@@ -209,8 +238,20 @@ const App = () => {
                 type={TransactionType.EXPENSE} 
                 transactions={transactions} 
                 members={members} 
+                budgets={budgets}
                 onAddTransaction={handleAddTransaction}
+                onUpdateTransaction={handleUpdateTransaction}
                 onDeleteTransaction={handleDeleteTransaction}
+                currencySymbol={settings.currencySymbol}
+              />
+            )}
+            {currentView === View.BUDGETS && (
+              <Budgets
+                budgets={budgets}
+                transactions={transactions}
+                onAddBudget={handleAddBudget}
+                onUpdateBudget={handleUpdateBudget}
+                onDeleteBudget={handleDeleteBudget}
                 currencySymbol={settings.currencySymbol}
               />
             )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Member, Transaction, TransactionType } from '../types';
 import { Phone, Mail, Plus, Search, LayoutGrid, List, X, IndianRupee, History, User, Edit, Trash2, AlertTriangle } from 'lucide-react';
@@ -281,7 +282,7 @@ const Members: React.FC<MembersProps> = ({ members, onAddMember, onUpdateMember,
               <div 
                 key={member.id} 
                 onClick={() => setSelectedMember(member)}
-                className="relative bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-neutral-800 hover:border-indigo-200 dark:hover:border-indigo-500 transition-all cursor-pointer group"
+                className="relative bg-[#fdfbf7] dark:bg-neutral-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-neutral-800 hover:border-indigo-200 dark:hover:border-indigo-500 transition-all cursor-pointer group"
               >
                 {/* Action Buttons on Grid Card */}
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
