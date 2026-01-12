@@ -1,0 +1,8 @@
+{
+  "name": "Church Finance Book",
+  "description": "A comprehensive church accounting and management application tailored for Indian churches.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
