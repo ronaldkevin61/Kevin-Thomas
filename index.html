@@ -91,26 +91,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 </script> 
-    // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+<script type="module">
+  // 1. Fixed imports so they work in the browser
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+  // If you need Login (Auth) or Database later, you will add them here too.
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyA8rkf9gDCUVLUwwGbvcXMgU3ryUkokEu8",
-  authDomain: "church-finance-book-abfd4.firebaseapp.com",
-  projectId: "church-finance-book-abfd4",
-  storageBucket: "church-finance-book-abfd4.firebasestorage.app",
-  messagingSenderId: "454453771168",
-  appId: "1:454453771168:web:e427740bad10596d8902c5",
-  measurementId: "G-7ZRZ46HEB8"
-};
+  // 2. Your specific configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA8rkf9gDCUVLUwwGbvcXMgU3ryUkokEu8",
+    authDomain: "church-finance-book-abfd4.firebaseapp.com",
+    projectId: "church-finance-book-abfd4",
+    storageBucket: "church-finance-book-abfd4.firebasestorage.app",
+    messagingSenderId: "454453771168",
+    appId: "1:454453771168:web:e427740bad10596d8902c5",
+    measurementId: "G-7ZRZ46HEB8"
+  };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+  // 3. Start the app
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  
+  console.log("Firebase is connected!");
+</script>
   </body>
 </html>
